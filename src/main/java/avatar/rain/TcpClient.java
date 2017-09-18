@@ -88,7 +88,7 @@ public class TcpClient {
                                             ChannelFuture channelFuture = channel.writeAndFlush(byteBuf);
                                             channelFuture.addListener((ChannelFutureListener) future -> {
                                                 LogUtil.getLogger().debug(
-                                                        "[发送给客户端成功]bodyLen={}, cmd={}, type={}, userId={}, code={}, data={}",
+                                                        "[发送给服务器成功]bodyLen={}, cmd={}, type={}, userId={}, code={}, data={}",
                                                         bytes.length,
                                                         cmd,
                                                         type,
