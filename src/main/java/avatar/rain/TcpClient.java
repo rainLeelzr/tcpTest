@@ -57,22 +57,6 @@ public class TcpClient {
 
                                         try {
                                             IM.SendTextToUserC2S.Builder sendTextToUserC2S = IM.SendTextToUserC2S.newBuilder().setToUserId(10).setMessage("hello你好！");
-                                            IM.User.Builder user = IM.User.newBuilder()
-                                                    .setId("ididid")
-                                                    .setAccount("acc")
-                                                    .setPwd("p")
-                                                    .setCreateTime(22222)
-                                                    .setStatus(2);
-                                            sendTextToUserC2S.setUser(user);
-                                            IM.Menu.Builder menu = IM.Menu.newBuilder()
-                                                    .setId("menuId")
-                                                    .setPwd("menuPwd")
-                                                    .setCreateTime(33333);
-                                            IM.Org.Builder org = IM.Org.newBuilder()
-                                                    .setId("orgId")
-                                                    .setPwd("orgPwd");
-                                            menu.setOrg(org);
-                                            sendTextToUserC2S.setMenu(menu);
                                             byte[] bytes = sendTextToUserC2S.build().toByteArray();
                                             // byte[] bytes = {2, 3};
                                             // String json = "{\"toUserId\": 10,\"message\": \"hello你好！\",\"user\": {\"id\": \"ididid\",\"account\": \"acc\",\"pwd\": \"p\",\"createTime\": 22222,\"status\": 2}}";
