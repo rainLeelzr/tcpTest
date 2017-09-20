@@ -1,9 +1,10 @@
 package avatar.rain;
 
+import avatar.rain.core.net.tcp.coder.AvatarDecoder;
+import avatar.rain.core.net.tcp.coder.AvatarEncoder;
+import avatar.rain.core.net.tcp.netpackage.TcpPacket;
+import avatar.rain.core.util.log.LogUtil;
 import avatar.rain.im.protobuf.IM;
-import avatar.rain.tcp.AvatarDecoder;
-import avatar.rain.tcp.AvatarEncoder;
-import avatar.rain.tcp.TcpPacket;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -49,11 +50,8 @@ public class TcpClient {
                                         }
 
                                         try {
-
-                                            // byte[] bytes = {2, 3};
-                                            // String json = "{\"toUserId\": 10,\"message\": \"hello你好！\",\"user\": {\"id\": \"ididid\",\"account\": \"acc\",\"pwd\": \"p\",\"createTime\": 22222,\"status\": 2}}";
-
-                                            TcpPacket packet = getProtobufPackage();
+                                            // TcpPacket packet = getProtobufPackage();
+                                            TcpPacket packet = getJsonPackage();
                                             ChannelFuture channelFuture = channel.writeAndFlush(packet.getByteBuf());
                                             channelFuture.addListener((ChannelFutureListener) future -> {
                                                 LogUtil.getLogger().debug("[发送给服务器成功]{}", packet.toString());
@@ -131,6 +129,14 @@ public class TcpClient {
         byte[] bytes = sendTextToUserC2S.build().toByteArray();
 
         TcpPacket packet = TcpPacket.buildProtoPackage("/test/hello", bytes);
+        packet.setUserId("d1b9008d-2afe-4656-a6d7-49d6ca9678c7");
+        return packet;
+    }
+
+    private TcpPacket getJsonPackage() {
+        String json = "{\"toUserId\": 10,\"message\": \"hello你好！\",\"user\": {\"id\": \"ididid\",\"account\": \"acc\",\"pwd\": \"p\",\"createTime\": 22222,\"status\": 2}}";
+
+        TcpPacket packet = TcpPacket.buildJsonPackage("/test/hello", json);
         packet.setUserId("d1b9008d-2afe-4656-a6d7-49d6ca9678c7");
         return packet;
     }
