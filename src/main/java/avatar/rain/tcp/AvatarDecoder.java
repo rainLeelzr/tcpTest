@@ -1,5 +1,6 @@
 package avatar.rain.tcp;
 
+import avatar.rain.LogUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
@@ -14,38 +15,59 @@ public class AvatarDecoder extends ByteToMessageDecoder {
 
     @Override
     public void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-        // 约定一个完整的tcp包的数据长度至少为20字节
-        if (in.readableBytes() < 20) {
+        LogUtil.getLogger().debug("收到网络包，长度：{}", in.readableBytes());
+        // 约定一个完整的tcp包的数据长度至少为10字节
+        if (in.readableBytes() < TcpPacket.AT_LEAST_LENGTH) {
             return;
         }
 
         in.markReaderIndex();
 
-        // 除了头信息的数据body长度
-        int length = in.readInt();
+        // body的长度（字节）
+        int bodyLength = in.readInt();
+        // todo 阻止大tcp包的发送
 
-        if (length <= 0 || length > MAX_LENGTH) {
-
-        }
-        int cmd = in.readInt();
-        int type = in.readInt();
-        int userId = in.readInt();
-        int code = in.readInt();
-        if (code == 0) {//如果对序号有要求，那么默认将序号等于用户id
-            code = userId;
-        }
-
-        // 如果body的长度少于头信息中的length，则是半包情况，重置此次tcp包的数据读取工作
-        if (in.readableBytes() < length) {
+        if (bodyLength != 0 && in.readableBytes() < TcpPacket.AT_LEAST_LENGTH - 4 + bodyLength) {
             in.resetReaderIndex();
             return;
         }
 
-        // 读取一个包含完整body数据的包，如果有粘包，则不继续读取，让其在下一个循环事件中处理
-        byte[] bytes = new byte[length];
-        in.readBytes(bytes);
+        // url的长度（字节）
+        int urlLength = in.readInt();
+        if (urlLength != 0 && in.readableBytes() < TcpPacket.AT_LEAST_LENGTH - 8 + bodyLength + urlLength) {
+            in.resetReaderIndex();
+            return;
+        }
+
+        // 请求的url
+        byte[] url = new byte[urlLength];
+        if (urlLength > 0) {
+            in.readBytes(url);
+        }
+
+        // 用户id的长度（字节）
+        byte userIdLength = in.readByte();
+        if (userIdLength != 0 && in.readableBytes() < userIdLength + 1 + bodyLength) {
+            in.resetReaderIndex();
+            return;
+        }
+
+        // 用户id
+        byte[] userId = new byte[userIdLength];
+        if (userIdLength > 0) {
+            in.readBytes(userId);
+        }
+
+        // body数据的格式
+        byte bodyType = in.readByte();
+
+        // body数据
+        byte[] body = new byte[bodyLength];
+        if (bodyLength > 0) {
+            in.readBytes(body);
+        }
 
         // 将数据封装成一个完整的数据包
-        out.add(new TCPPacket(length, cmd, type, userId, code, bytes));
+        out.add(new TcpPacket(bodyLength, urlLength, url, userIdLength, userId, bodyType, body));
     }
 }

@@ -3,11 +3,8 @@ package avatar.rain;
 import avatar.rain.im.protobuf.IM;
 import avatar.rain.tcp.AvatarDecoder;
 import avatar.rain.tcp.AvatarEncoder;
-import avatar.rain.tcp.PacketBodyType;
-import avatar.rain.tcp.TCPPacket;
+import avatar.rain.tcp.TcpPacket;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -50,35 +47,16 @@ public class TcpClient {
                                         } catch (InterruptedException e) {
                                             LogUtil.getLogger().error(e.getMessage(), e);
                                         }
-                                        int cmd = 1;
-                                        int type = PacketBodyType.Proto.getType();
-                                        int userId = 3;
-                                        int code = 4;
 
                                         try {
-                                            IM.SendTextToUserC2S.Builder sendTextToUserC2S = IM.SendTextToUserC2S.newBuilder().setToUserId(10).setMessage("hello你好！");
-                                            byte[] bytes = sendTextToUserC2S.build().toByteArray();
+
                                             // byte[] bytes = {2, 3};
                                             // String json = "{\"toUserId\": 10,\"message\": \"hello你好！\",\"user\": {\"id\": \"ididid\",\"account\": \"acc\",\"pwd\": \"p\",\"createTime\": 22222,\"status\": 2}}";
-                                            // byte[] bytes = json.getBytes("utf-8");
 
-                                            ByteBuf byteBuf = Unpooled.buffer();
-                                            byteBuf.writeInt(bytes.length);
-                                            byteBuf.writeInt(cmd);// cmd
-                                            byteBuf.writeInt(type);// type
-                                            byteBuf.writeInt(userId);// userId
-                                            byteBuf.writeInt(code);// code
-                                            byteBuf.writeBytes(bytes);
-                                            ChannelFuture channelFuture = channel.writeAndFlush(byteBuf);
+                                            TcpPacket packet = getProtobufPackage();
+                                            ChannelFuture channelFuture = channel.writeAndFlush(packet.getByteBuf());
                                             channelFuture.addListener((ChannelFutureListener) future -> {
-                                                LogUtil.getLogger().debug(
-                                                        "[发送给服务器成功]bodyLen={}, cmd={}, type={}, userId={}, code={}, data={}",
-                                                        bytes.length,
-                                                        cmd,
-                                                        type,
-                                                        userId,
-                                                        code,
-                                                        bytes);
+                                                LogUtil.getLogger().debug("[发送给服务器成功]{}", packet.toString());
                                             });
                                         } catch (Exception e) {
                                             e.printStackTrace();
@@ -89,7 +67,7 @@ public class TcpClient {
 
                                 @Override
                                 public void channelRead(ChannelHandlerContext cx, Object object) {
-                                    TCPPacket packet = (TCPPacket) object;
+                                    TcpPacket packet = (TcpPacket) object;
 
                                     LogUtil.getLogger().debug("收到服务端消息：{}", packet.toString());
                                 }
@@ -146,6 +124,15 @@ public class TcpClient {
         } finally {
             group.shutdownGracefully();
         }
+    }
+
+    private TcpPacket getProtobufPackage() {
+        IM.SendTextToUserC2S.Builder sendTextToUserC2S = IM.SendTextToUserC2S.newBuilder().setToUserId(10).setMessage("hello你好！");
+        byte[] bytes = sendTextToUserC2S.build().toByteArray();
+
+        TcpPacket packet = TcpPacket.buildProtoPackage("/test/hello", bytes);
+        packet.setUserId("d1b9008d-2afe-4656-a6d7-49d6ca9678c7");
+        return packet;
     }
 
     public static void main(String[] args) throws Exception {
