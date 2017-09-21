@@ -48,14 +48,20 @@ public class TcpClient {
                                         } catch (InterruptedException e) {
                                             LogUtil.getLogger().error(e.getMessage(), e);
                                         }
-
                                         try {
-                                            // TcpPacket packet = getProtobufPackage();
-                                            TcpPacket packet = getJsonPackage();
-                                            ChannelFuture channelFuture = channel.writeAndFlush(packet.getByteBuf());
-                                            channelFuture.addListener((ChannelFutureListener) future -> {
-                                                LogUtil.getLogger().debug("[发送给服务器成功]{}", packet.toString());
-                                            });
+                                            for (int i = 0; i < 20; i++) {
+                                                // TcpPacket packet = getProtobufPackage();
+                                                TcpPacket packet;
+                                                if (i % 2 == 0) {
+                                                    packet = getJsonPackage();
+                                                } else {
+                                                    packet = getProtobufPackage();
+                                                }
+                                                ChannelFuture channelFuture = channel.writeAndFlush(packet.getByteBuf());
+                                                channelFuture.addListener((ChannelFutureListener) future -> {
+                                                    LogUtil.getLogger().debug("[发送给服务器成功]{}", packet.toString());
+                                                });
+                                            }
                                         } catch (Exception e) {
                                             e.printStackTrace();
                                         }
@@ -128,16 +134,14 @@ public class TcpClient {
         IM.SendTextToUserC2S.Builder sendTextToUserC2S = IM.SendTextToUserC2S.newBuilder().setToUserId(10).setMessage("hello你好！");
         byte[] bytes = sendTextToUserC2S.build().toByteArray();
 
-        TcpPacket packet = TcpPacket.buildProtoPackage("/test/hello", bytes);
-        packet.setUserId("d1b9008d-2afe-4656-a6d7-49d6ca9678c7");
+        TcpPacket packet = TcpPacket.buildProtoPackage(TcpPacket.MethodEnum.GET, "/test/hello", bytes);
         return packet;
     }
 
     private TcpPacket getJsonPackage() {
         String json = "{\"toUserId\": 10,\"message\": \"hello你好！\",\"user\": {\"id\": \"ididid\",\"account\": \"acc\",\"pwd\": \"p\",\"createTime\": 22222,\"status\": 2}}";
 
-        TcpPacket packet = TcpPacket.buildJsonPackage("/test/hello", json);
-        packet.setUserId("d1b9008d-2afe-4656-a6d7-49d6ca9678c7");
+        TcpPacket packet = TcpPacket.buildJsonPackage(TcpPacket.MethodEnum.POST, "/test/hello", json);
         return packet;
     }
 
