@@ -76,7 +76,6 @@ public class TcpClient {
                                     LogUtil.getLogger().debug("收到服务端消息：{}", packet.toString());
                                 }
 
-
                                 @Override
                                 public void channelReadComplete(ChannelHandlerContext ctx) {
                                     ctx.flush();
