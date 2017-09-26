@@ -49,8 +49,9 @@ public class TcpClient {
                                             LogUtil.getLogger().error(e.getMessage(), e);
                                         }
                                         try {
-                                            for (int i = 0; i < 20; i++) {
+                                            for (int i = 0; i < 2; i++) {
                                                 // TcpPacket packet = getProtobufPackage();
+                                                // TcpPacket packet = getJsonPackage();
                                                 TcpPacket packet;
                                                 if (i % 2 == 0) {
                                                     packet = getJsonPackage();
@@ -133,14 +134,14 @@ public class TcpClient {
         IM.SendTextToUserC2S.Builder sendTextToUserC2S = IM.SendTextToUserC2S.newBuilder().setToUserId(10).setMessage("hello你好！");
         byte[] bytes = sendTextToUserC2S.build().toByteArray();
 
-        TcpPacket packet = TcpPacket.buildProtoPackage(TcpPacket.MethodEnum.GET, "/test/hello", bytes);
+        TcpPacket packet = TcpPacket.buildProtoPackage(TcpPacket.MethodEnum.GET, "/im/test/hello/52", bytes);
         return packet;
     }
 
     private TcpPacket getJsonPackage() {
         String json = "{\"toUserId\": 10,\"message\": \"hello你好！\",\"user\": {\"id\": \"ididid\",\"account\": \"acc\",\"pwd\": \"p\",\"createTime\": 22222,\"status\": 2}}";
 
-        TcpPacket packet = TcpPacket.buildJsonPackage(TcpPacket.MethodEnum.POST, "/test/hello", json);
+        TcpPacket packet = TcpPacket.buildJsonPackage(TcpPacket.MethodEnum.POST, "/im/test/hello", json);
         return packet;
     }
 
