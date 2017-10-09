@@ -5,6 +5,8 @@ import avatar.rain.core.net.tcp.coder.AvatarEncoder;
 import avatar.rain.core.net.tcp.netpackage.TcpPacket;
 import avatar.rain.core.util.log.LogUtil;
 import avatar.rain.im.protobuf.IM;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.TextFormat;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -49,7 +51,7 @@ public class TcpClient {
                                             LogUtil.getLogger().error(e.getMessage(), e);
                                         }
                                         try {
-                                            for (int i = 0; i < 2; i++) {
+                                            for (int i = 0; i < 10; i++) {
                                                 // TcpPacket packet = getProtobufPackage();
                                                 // TcpPacket packet = getJsonPackage();
                                                 TcpPacket packet;
@@ -60,7 +62,7 @@ public class TcpClient {
                                                 }
                                                 ChannelFuture channelFuture = channel.writeAndFlush(packet.getByteBuf());
                                                 channelFuture.addListener((ChannelFutureListener) future -> {
-                                                    LogUtil.getLogger().debug("[发送给服务器成功]{}", packet.toString());
+                                                    LogUtil.getLogger().debug("发送给服务器成功：{}", packet.toString());
                                                 });
                                             }
                                         } catch (Exception e) {
@@ -74,7 +76,16 @@ public class TcpClient {
                                 public void channelRead(ChannelHandlerContext cx, Object object) {
                                     TcpPacket packet = (TcpPacket) object;
 
-                                    LogUtil.getLogger().debug("收到服务端消息：{}", packet.toString());
+                                    if (packet.getBodyType() == TcpPacket.BodyTypeEnum.JSON.geId()) {
+                                        LogUtil.getLogger().debug("收到服务端消息：{}{}", packet.toString(), packet.getBodyStr());
+                                    } else {
+                                        try {
+                                            IM.SendTextToUserS2C sendTextToUserS2C = IM.SendTextToUserS2C.parseFrom(packet.getBody());
+                                            LogUtil.getLogger().debug("收到服务端消息：{}{}", packet.toString(), TextFormat.shortDebugString(sendTextToUserS2C));
+                                        } catch (InvalidProtocolBufferException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
                                 }
 
                                 @Override
@@ -131,17 +142,21 @@ public class TcpClient {
     }
 
     private TcpPacket getProtobufPackage() {
-        IM.SendTextToUserC2S.Builder sendTextToUserC2S = IM.SendTextToUserC2S.newBuilder().setToUserId(10).setMessage("hello你好！");
+        IM.SendTextToUserC2S.Builder sendTextToUserC2S = IM.SendTextToUserC2S
+                .newBuilder()
+                .setToUserId(10)
+                .setMessage("hello你好！")
+                .setOpt(20);
         byte[] bytes = sendTextToUserC2S.build().toByteArray();
 
-        TcpPacket packet = TcpPacket.buildProtoPackage(TcpPacket.MethodEnum.GET, "/im/test/hello/52", bytes);
+        TcpPacket packet = TcpPacket.buildProtoPackage(TcpPacket.MethodEnum.POST, "/im/test/hello", bytes);
         return packet;
     }
 
     private TcpPacket getJsonPackage() {
         String json = "{\"toUserId\": 10,\"message\": \"hello你好！\",\"user\": {\"id\": \"ididid\",\"account\": \"acc\",\"pwd\": \"p\",\"createTime\": 22222,\"status\": 2}}";
 
-        TcpPacket packet = TcpPacket.buildJsonPackage(TcpPacket.MethodEnum.POST, "/im/test/hello", json);
+        TcpPacket packet = TcpPacket.buildJsonPackage(TcpPacket.MethodEnum.POST, "/im/test/hello/52", json);
         return packet;
     }
 
